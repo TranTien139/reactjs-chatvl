@@ -18,7 +18,7 @@ class Register extends Component {
             lastNameValid: false,
             emailValid: false,
             passwordValid: false,
-            formValid: true
+            formValid: false
         }
     }
     handleInput(e){
@@ -56,25 +56,29 @@ class Register extends Component {
                 formValidator.repassword = this.state.password === this.state.repassword ? '' : 'Mật khẩu không khớp';
                 break;
             default:
-                return;
                 break;
         }
-        this.setState({formErrors:formValidator},this.validateForm);
+        this.setState({formErrors:formValidator,
+            firstNameValid:firstNameValid,
+            lastNameValid:lastNameValid,
+            emailValid:emailValid,
+            passwordValid:passwordValid
+        },this.validateForm);
     }
 
     validateForm() {
-       // this.setState({formValid: this.state.lastNameValid && this.state.firstNameValid &&this.state.emailValid && this.state.passwordValid});
+        this.setState({formValid: this.state.lastNameValid && this.state.firstNameValid &&this.state.emailValid && this.state.passwordValid});
     }
 
     handleFormSubmit(e) {
         e.preventDefault();
         let data = { email : this.state.email, firstName: this.state.firstName, lastName: this.state.lastName, password:this.state.password }
         this.props.registerUser(data);
+
         return;
     }
 
     render() {
-        const {handleSubmit} = this.props;
         const FormErrors =
             <div className='FormError'>
                 { Object.keys(this.state.formErrors).map((fieldName, i) => {

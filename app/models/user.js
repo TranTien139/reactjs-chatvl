@@ -16,7 +16,7 @@ var userSchema = mongoose.Schema({
         image        : String,
         password     : String,
     },
-    meta:{viewWeek:Number, viewMonth:Number, viewTotal:Number }
+    meta:{viewWeek:Number, viewMonth:Number, viewTotal:Number,monday:Date, sunday:Date,firstDay:Date, lastDay: Date }
 });
 
 userSchema.methods.generateHash = function(password) {

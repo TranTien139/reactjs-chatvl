@@ -8,24 +8,24 @@ function DanhSachBaiViet(skip, status, callback) {
 }
 
 function DanhSachBaiVietCate(skip, cate, callback) {
-    if(cate === 'hot') {
+    if (cate === 'hot') {
         Article.find({status: "Publish"}).sort({views: -1}).skip(skip).limit(10).exec(function (err, data) {
             callback(err, data);
         });
-    }else {
-        Article.find({$and:[{status: "Publish"},{userSlug : cate}]}).sort({date: -1}).skip(skip).limit(10).exec(function (err, data) {
+    } else {
+        Article.find({$and: [{status: "Publish"}, {userSlug: cate}]}).sort({date: -1}).skip(skip).limit(10).exec(function (err, data) {
             callback(err, data);
         });
     }
 }
 
 function DanhSachBaiVietUser(skip, user, callback) {
-    if(user === 'unknown') {
-        Article.find({$and:[{status: "Publish"},{userSlug :{$exists: false}}]}).sort({date: -1}).skip(skip).limit(10).exec(function (err, data) {
+    if (user === 'unknown') {
+        Article.find({$and: [{status: "Publish"}, {userSlug: {$exists: false}}]}).sort({date: -1}).skip(skip).limit(10).exec(function (err, data) {
             callback(err, data);
         });
-    }else {
-        Article.find({$and:[{status: "Publish"},{userSlug : user}]}).sort({date: -1}).skip(skip).limit(10).exec(function (err, data) {
+    } else {
+        Article.find({$and: [{status: "Publish"}, {userSlug: user}]}).sort({date: -1}).skip(skip).limit(10).exec(function (err, data) {
             callback(err, data);
         });
     }
@@ -45,26 +45,63 @@ function ChiTietBaiViet(id, callback) {
         }
         data.views = parseInt(old_view) + 1;
         let id_user = data.userSlug !== 'undefined' ? data.userSlug : '';
-        if(id_user !== '' && typeof id_user !== "undefined" && data.userSlug !='unknown') {
+        if (id_user !== '' && typeof id_user !== "undefined" && data.userSlug != 'unknown') {
             User.findOne({"local.userSlug": id_user}).exec(function (err, result) {
-                if(typeof result.meta === 'undefined'){
-                    let meta = {viewWeek:1,viewMonth:1,viewTotal:1}
-                    result.meta = meta;
-                    result.save();
-                }else {
-                    let week =  result.meta.viewWeek ;
-                    let month =  result.meta.viewMonth;
-                    let total =  result.meta.viewTotal;
+                let week = typeof result.meta.viewWeek === 'undefined' ? 0 : result.meta.viewWeek;
+                let month = typeof result.meta.viewMonth === 'undefined' ? 0 : result.meta.viewMonth;
+                let total = typeof result.meta.viewTotal === 'undefined' ? 0 : result.meta.viewTotal;
+
+                process.env.TZ = 'Asia/Ho_Chi_Minh';
+                if(typeof  result.meta.monday === 'undefined' && typeof  result.meta.sunday === 'undefined'){
+                    var current = new Date();
+                    current.setHours(0,0,0,0);
+                    var weekstart = current.getDate() - current.getDay() +1;
+                    var weekend = weekstart + 6;
+                    var monday =  new Date(current.setDate(weekstart));
+                    var sunday = new Date(current.setDate(weekend));
+
+                    var firstDay = new Date(current.getFullYear(), current.getMonth(), 1);
+                    var lastDay = new Date(current.getFullYear(), current.getMonth() + 1, 0);
+                    result.meta.monday = monday;
+                    result.meta.sunday = sunday;
+                    result.meta.firstDay = firstDay;
+                    result.meta.lastDay = lastDay;
+
                     result.meta.viewWeek = parseInt(week) + 1;
                     result.meta.viewMonth = parseInt(month) + 1;
                     result.meta.viewTotal = parseInt(total) + 1;
-                    result.save();
+                }else {
+                    let date = new Date();
+                    var current = new Date();
+                    current.setHours(0,0,0,0);
+                    if(date > result.meta.monday &&  date < result.meta.sunday){
+                        result.meta.viewWeek = parseInt(week) + 1;
+                    }else {
+                        var weekstart = current.getDate() - current.getDay() +1;
+                        var weekend = weekstart + 6;
+                        var monday =  new Date(current.setDate(weekstart));
+                        var sunday = new Date(current.setDate(weekend));
+                        result.meta.monday = monday;
+                        result.meta.sunday = sunday;
+                    }
+
+                    if(date > result.meta.firstDay &&  date < result.meta.lastDay){
+                        result.meta.viewMonth = parseInt(month) + 1;
+                    }else {
+                        var firstDay = new Date(current.getFullYear(), current.getMonth(), 1);
+                        var lastDay = new Date(current.getFullYear(), current.getMonth() + 1, 0);
+                        result.meta.firstDay = firstDay;
+                        result.meta.lastDay = lastDay;
+                    }
+                    result.meta.viewTotal = parseInt(total) + 1;
                 }
+
+                result.save();
                 data.save(function (err) {
                     callback(err, data);
                 });
             });
-        }else {
+        } else {
             data.save(function (err) {
                 callback(err, data);
             });
@@ -86,13 +123,13 @@ function AticleComment(data, callback) {
         }
 
         let comment = {
-                id: data.id,
-                name: data.name,
-                image: data.image,
-                like: 0,
-                content: data.content,
-                date: data.date,
-                reply: [],
+            id: data.id,
+            name: data.name,
+            image: data.image,
+            like: 0,
+            content: data.content,
+            date: data.date,
+            reply: [],
         }
         old_comment.push(comment);
         data1.comments = old_comment;
@@ -116,36 +153,44 @@ function AticleLikes(data, callback) {
         }
 
         var id = data.id;
-        if(data.action === 'like') {
+        if (data.action === 'like') {
             if (old_likes.indexOf(data.id) === -1) {
                 old_likes.push(data.id);
-            }else {
-                old_likes = old_likes.filter((val,i)=>{ return (val !==  id) });
+            } else {
+                old_likes = old_likes.filter((val, i) => {
+                    return (val !== id)
+                });
             }
-            old_dislikes = old_dislikes.filter((val,i)=>{ return (val !==  id) });
-        }else if(data.action === 'dislike') {
+            old_dislikes = old_dislikes.filter((val, i) => {
+                return (val !== id)
+            });
+        } else if (data.action === 'dislike') {
 
-            old_likes = old_likes.filter((val,i)=>{ return (val !==  id) });
+            old_likes = old_likes.filter((val, i) => {
+                return (val !== id)
+            });
 
             if (old_dislikes.indexOf(data.id) === -1) {
                 old_dislikes.push(data.id);
-            }else {
-                old_dislikes = old_dislikes.filter((val,i)=>{ return (val !==  id) });
+            } else {
+                old_dislikes = old_dislikes.filter((val, i) => {
+                    return (val !== id)
+                });
             }
         }
 
         data1.likes = old_likes;
         data1.dislikes = old_dislikes;
 
-        data1.save(function (err,res) {
-           callback(err,'success');
+        data1.save(function (err, res) {
+            callback(err, 'success');
         });
     });
 }
 
-function getTopUser(time, callback){
-    User.find({}).sort({"meta.viewWeek": -1}).skip(0).limit(10).exec(function(err, data){
-        callback(err,data);
+function getTopUser(time, callback) {
+    User.find({}).sort({"meta.viewWeek": -1}).skip(0).limit(10).exec(function (err, data) {
+        callback(err, data);
     });
 }
 
@@ -156,22 +201,23 @@ function postUploadBaiViet(data, callback) {
     article.user.image = data.image;
     article.userSlug = data.userSlug;
     article.title = data.title;
-    if(data.link.indexOf('www.youtube.com') !== -1){
+    if (data.link.indexOf('www.youtube.com') !== -1) {
         let code = data.link.split('?v=');
-        article.image = 'http://i.ytimg.com/vi/'+code[1]+'/0.jpg';;
-        article.linkVideo= code[1];
-    }else {
+        article.image = 'http://i.ytimg.com/vi/' + code[1] + '/0.jpg';
+        ;
+        article.linkVideo = code[1];
+    } else {
         article.image = data.link;
-        article.linkVideo= '';
+        article.linkVideo = '';
     }
     article.status = 'Publish';
     article.views = 0;
-    article.likes= [];
+    article.likes = [];
     article.shares = [];
-    article.dislikes= [];
+    article.dislikes = [];
     article.comments = [];
     article.save(function (err) {
-        callback(err,data);
+        callback(err, data);
     });
 }
 

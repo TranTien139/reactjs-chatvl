@@ -152,7 +152,7 @@ class ArticleDetail extends Component {
                                 <h3>{ hot.title }</h3>
                                 <div className="user">
                                     <span className="user-by">bởi</span>
-                                    <span className="name">{ typeof hot.user !== 'undefined' ? <a href={'/user/'+hot.user.id} >{hot.user.name }</a> : <a href={'/user/unknown'} >unknown &nbsp;</a> }</span>
+                                    <span className="name">{ typeof hot.user !== 'undefined' ? <a href={'/user/'+hot.userSlug} >{hot.user.name }</a> : <a href={'/user/unknown'} >unknown &nbsp;</a> }</span>
 
                                 </div>
                                 <div className="time_ago">{ common.NiceTime(hot.date) }</div>

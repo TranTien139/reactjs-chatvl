@@ -1,5 +1,4 @@
 import axios from 'axios';
-import { browserHistory } from 'react-router';
 import cookie from 'react-cookies';
 import { AUTH_USER,
     AUTH_ERROR,
@@ -57,9 +56,9 @@ export function registerUser({ email, firstName, lastName, password }) {
         axios.post(API_URL+'/auth/register', { email, firstName, lastName, password })
             .then(response => {
                 if(typeof response.data !== 'undefined' && response.data === 'success'){
-                    window.location.href = CLIENT_ROOT_URL + '/';
+                    window.location.href = CLIENT_ROOT_URL + '/login';
                 }else {
-                   window.location.reload();
+                    dispatch({type: AUTH_ERROR, payload: "Tài khoản này đã tồn tại"});
                 }
             })
             .catch((error) => {

@@ -27,6 +27,7 @@ import { AUTH_USER } from './actions/typesActions.js';
 
 import cookie from 'react-cookies';
 const token = cookie.load('token');
+
 if (token) {
     store.dispatch({ type: AUTH_USER, payload: token.user});
 }

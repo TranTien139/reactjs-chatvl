@@ -78,7 +78,7 @@ class Home extends Component {
         const TopUserWeek = topuserlist.map((user) => {
             return (
                 <div className="item" key={user._id}>
-                    <a href={typeof user.local.userSlug !== 'undefined' ? user.local.userSlug :''}>
+                    <a href={typeof user.local.userSlug !== 'undefined' ? '/user/'+ user.local.userSlug :'/user/unknown'}>
                         <img src={ user.local.image === '' ? '/images/avatar.jpg' : user.local.image}/>
                         <div className="info">
                             <span className="name">{user.local.name}</span> <span className="views">{ typeof user.meta !== "undefined" ? user.meta.viewWeek : 0 }</span>
