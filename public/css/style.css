@@ -1785,4 +1785,5 @@ a.show-all-reply:hover{
 .title-post_hot{font-size: 18px;  font-weight: 600;  padding: 10px;  border-bottom: 1px solid #ddd;  margin-bottom: 10px;}
 .head-logo>h2{margin-top: 8px;}
 .box-profile-head{display: none;padding: 10px;  background: #f4f4f4;}
+.liked{color: red;}
 

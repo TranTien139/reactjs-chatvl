@@ -39,10 +39,9 @@ export function loginUser({ email, password }) {
             .then(response => {
                 if(typeof response.data.token !== 'undefined') {
                     cookie.save('token', response.data , {path: '/'});
-                    // dispatch({type: AUTH_USER, payload: ""});
                     window.location.href = CLIENT_ROOT_URL + '/';
                 }else {
-                    window.location.reload();
+                    dispatch({type: AUTH_ERROR, payload: "Bạn nhập sai tài khoản hoặc mật khẩu"});
                 }
             })
             .catch((error) => {

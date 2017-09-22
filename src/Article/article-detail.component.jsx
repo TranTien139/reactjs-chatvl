@@ -8,16 +8,16 @@ import {Link} from 'react-router';
 import {connect} from 'react-redux';
 import {bindActionCreators} from 'redux';
 
-import cookie from 'react-cookies';
-const user = cookie.load('token');
-
 class ArticleDetail extends Component {
 
     constructor(props) {
         super(props);
         this.state = {
             data: [],
-            hot: []
+            hot: [],
+            likes: false,
+            dislikes: false,
+            id_user: ''
         };
     }
 
@@ -25,10 +25,16 @@ class ArticleDetail extends Component {
         browserHistory.push('/');
     }
 
+    componentWillMount(){
+        let user = this.props.auth;
+        let id_user =  user.content.id;
+        this.setState({
+            id_user:id_user
+        });
+    }
+
     componentDidMount() {
-
         const id = this.props.params.id;
-
         this.props.getDetailArticle(id);
 
         fetch("/api/article-hot")
@@ -42,6 +48,8 @@ class ArticleDetail extends Component {
         let content = this.refs.comment.value;
         let date = new Date();
         let id = this.props.params.id;
+        let user = this.props.auth;
+
         if (content.length > 2 && typeof user != 'undefined') {
             fetch('/api/comments', {
                 method: 'POST',
@@ -51,9 +59,9 @@ class ArticleDetail extends Component {
                 },
                 body: JSON.stringify({
                     id_article:id,
-                    id: user.user.id,
-                    name: user.user.name,
-                    image: user.user.image,
+                    id: user.content.id,
+                    name: user.content.name,
+                    image: user.content.image,
                     like: [],
                     content: content,
                     date: date,
@@ -69,7 +77,9 @@ class ArticleDetail extends Component {
 
     handlelikes = (action)=>{
         let id = this.props.params.id;
-        if (typeof user != 'undefined') {
+        let user = this.props.auth;
+
+        if (typeof user != 'undefined' && user.authenticated === true) {
             fetch('/api/likes', {
                 method: 'POST',
                 headers: {
@@ -79,12 +89,11 @@ class ArticleDetail extends Component {
                 body: JSON.stringify({
                     action:action,
                     id_article:id,
-                    id: user.user.id,
-                    name: user.user.name,
-                    image: user.user.image,
+                    id: user.content.id,
+                    name: user.content.name,
+                    image: user.content.image,
                 })
             }).then((response)=> response.json()).then((responseJson)=>{
-               // window.location.reload();
             }).catch((err)=>{
                 console.log(err);
             });
@@ -92,8 +101,11 @@ class ArticleDetail extends Component {
     }
 
     render() {
-
         const article = this.props.details.details;
+
+        let liked = typeof article.likes !== 'undefined' ? article.likes.indexOf(this.state.id_user): false;
+        let disliked = typeof article.dislikes !== 'undefined' ? article.dislikes.indexOf(this.state.id_user): false;
+
         const listComment = typeof article.comments !== 'undefined' ?
             article.comments.map((cmt, i) => {
                 return (
@@ -136,8 +148,7 @@ class ArticleDetail extends Component {
                         </div>
                     </li>
                 );
-            })
-            : '';
+            }) : '';
 
         const ListArticleHot = this.state.hot.map((hot, i) => {
             return (
@@ -178,10 +189,10 @@ class ArticleDetail extends Component {
                             <div id="post-control-bar" className="spread-bar-wrap">
                                 <div className="spread-bar">
                                     <div id="facebook-btn" className="facebook-btn">
-                                        <a className="stat-item_like" onClick={ this.handlelikes.bind(this,'like') }> <i
+                                        <a className={ liked !== -1 ? "stat-item_like liked" : "stat-item_like"} onClick={ this.handlelikes.bind(this,'like') }> <i
                                             className="fa fa-thumbs-up icon"/> { typeof article.likes !== 'undefined' ? article.likes.length : 0 }
                                         </a>
-                                        <a className="stat-item_like" onClick={ this.handlelikes.bind(this,'dislike') } > <i className="fa fa-thumbs-down icon"/>
+                                        <a className={ disliked !== -1 ? "stat-item_like liked" : "stat-item_like"} onClick={ this.handlelikes.bind(this,'dislike') } > <i className="fa fa-thumbs-down icon"/>
                                             { typeof article.dislikes !== 'undefined' ? article.dislikes.length : 0 }
                                         </a>
                                     </div>
@@ -286,7 +297,8 @@ class ArticleDetail extends Component {
 }
 function mapStateToProps(state) {
     return {
-        details: state.details
+        details: state.details,
+        auth: state.auth
     }
 }
 

@@ -1,47 +1,63 @@
-import React, { Component } from 'react';
-import { connect } from 'react-redux';
-import { Field, reduxForm } from 'redux-form';
-import { Link } from 'react-router';
-import { loginUser } from '../actions';
+import React, {Component} from 'react';
+import {connect} from 'react-redux';
+import {Field, reduxForm} from 'redux-form';
+import {Link} from 'react-router';
+import {loginUser} from '../actions';
 
-const form = reduxForm({
-    form: 'login'
-});
 
 class Login extends Component {
-    handleFormSubmit(formProps) {
-        this.props.loginUser(formProps);
+    constructor(props) {
+        super(props);
+        this.state = {
+            email: '',
+            password: ''
+        }
+    }
+
+    handleChangeInput(e){
+        let name = e.target.name;
+        let value = e.target.value;
+        this.setState({
+            [name]: value
+        });
     }
 
     renderAlert() {
         if(this.props.errorMessage) {
             return (
                 <div>
-                    <span><strong>Error!</strong> {this.props.errorMessage}</span>
+                    <span>{this.props.errorMessage}</span>
                 </div>
             );
         }
     }
 
+    handleFormSubmit(e) {
+        e.preventDefault();
+        let data = {email: this.state.email, password: this.state.password}
+        this.props.loginUser(data);
+        return;
+    }
+
     render() {
-        const { handleSubmit } = this.props;
         return (
             <div>
                 <div className="col-sm-6 col-sm-offset-3">
-                <form onSubmit={handleSubmit(this.handleFormSubmit.bind(this))}>
-                    {this.renderAlert()}
-                    <div className="form-group">
-                        <label>Email</label>
-                        <Field name="email" className="form-control" component="input" type="text" />
-                    </div>
-                    <div className="form-group">
-                        <label>Password</label>
-                        <Field name="password" className="form-control" component="input" type="password" />
-                    </div>
-                    <div className="form-group">
-                    <button type="submit" className="btn btn-primary">Đăng nhập</button>
-                    </div>
-                </form>
+                    <div style={{paddingTop: 30}}></div>
+                    <form onSubmit={this.handleFormSubmit.bind(this)}>
+                        { this.renderAlert() }
+                        <div className="form-group">
+                            <label>Địa chỉ email</label>
+                            <input name="email" className="form-control" type="text"  onChange={this.handleChangeInput.bind(this)} />
+                        </div>
+                        <div className="form-group">
+                            <label>Mật khẩu</label>
+                            <input name="password" className="form-control" onChange={this.handleChangeInput.bind(this)} type="password"/>
+                        </div>
+                        <div className="form-group">
+                            <button type="submit" className="btn btn-primary">Đăng nhập</button>
+                        </div>
+                    </form>
                     <div className="pull-right"><a href="register">Đăng kí</a></div>
                 </div>
             </div>
@@ -51,9 +67,8 @@ class Login extends Component {
 
 function mapStateToProps(state) {
     return {
-        errorMessage: state.auth.error,
-        message: state.auth.message
+        errorMessage: state.auth.error
     };
 }
 
-export default connect(mapStateToProps, { loginUser })(form(Login));
+export default connect(mapStateToProps, {loginUser})(Login);

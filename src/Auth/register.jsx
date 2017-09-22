@@ -74,22 +74,30 @@ class Register extends Component {
         e.preventDefault();
         let data = { email : this.state.email, firstName: this.state.firstName, lastName: this.state.lastName, password:this.state.password }
         this.props.registerUser(data);
+    }
 
-        return;
+    renderAlert() {
+        if(this.props.errorMessage) {
+            return (
+                <div>
+                    <span>{this.props.errorMessage}</span>
+                </div>
+            );
+        }
     }
 
     render() {
         const FormErrors =
             <div className='FormError'>
-                { Object.keys(this.state.formErrors).map((fieldName, i) => {
-                    if (this.state.formErrors[fieldName].length > 0) {
-                        return (<p key={i}> { this.state.formErrors[fieldName] }</p>)
-                    } else {
-                        return '';
-                    }}
-                )
-                }
-            </div>
+            { Object.keys(this.state.formErrors).map((fieldName, i) => {
+                if (this.state.formErrors[fieldName].length > 0) {
+                    return (<p key={i}> { this.state.formErrors[fieldName] }</p>)
+                } else {
+                    return '';
+                }}
+            )
+    }
+    </div>
         return (
             <div className="col-sm-8 col-sm-offset-2">
                 <div style={{ paddingTop: 30 }}></div>
@@ -97,6 +105,7 @@ class Register extends Component {
                     {FormErrors}
                 </div>
                 <form onSubmit={this.handleFormSubmit.bind(this)}>
+                    {this.renderAlert()}
                     <div className="form-group">
                         <div className="row">
                             <div className="col-md-6">
@@ -146,6 +155,8 @@ class Register extends Component {
 
 function mapStateToProps(state) {
     return {
+        auth: state.auth,
+        errorMessage: state.auth.error
     };
 }
 
