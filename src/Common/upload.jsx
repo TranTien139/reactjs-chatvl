@@ -19,6 +19,7 @@ class Upload extends Component {
 
     handleSubmitPost(e){
         e.preventDefault();
+        if(this.state.link.indexOf('http://') !== -1 && this.state.title !== '' && this.state.title >= 3){
         fetch('/api/upload', {
             method: 'POST',
             headers: {
@@ -34,10 +35,11 @@ class Upload extends Component {
                 userSlug: user.user.userSlug
             })
         }).then((response)=> response.json()).then((responseJson)=>{
-             window.location.reload();
+             window.location.href = '/';
         }).catch((err)=>{
             console.log(err);
         });
+      }
     }
 
     render() {

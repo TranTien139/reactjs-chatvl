@@ -12,7 +12,9 @@ class Home extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            page: 0
+            page: 0,
+            topuser:[],
+            selectTopuser:'week'
         }
     }
 
@@ -34,12 +36,29 @@ class Home extends Component {
         this.props.getAticleNew(queryParams - 1);
 
         this.props.getTopUserWeek();
+
+        fetch('/api/get-top-user-week').then((response)=> response.json()).then((responseJson)=>{
+                this.setState({
+                  topuser:responseJson
+                });
+        }).catch((err)=>{
+            console.log(err);
+        });
+    }
+
+    handleTopUser(type){
+      fetch('/api/get-top-user-'+type).then((response)=> response.json()).then((responseJson)=>{
+              this.setState({
+                topuser:responseJson,
+                selectTopuser:type
+              });
+      }).catch((err)=>{
+          console.log(err);
+      });
     }
 
     render() {
         const imageList = this.props.news.news;
-
-        const topuserlist = this.props.topweek.topweek;
 
         const imageNode = imageList.map((image) => {
             return (
@@ -75,13 +94,16 @@ class Home extends Component {
                 </div>
             )
         });
-        const TopUserWeek = topuserlist.map((user) => {
+
+        const TopUserWeek = this.state.topuser.map((user) => {
             return (
                 <div className="item" key={user._id}>
                     <a href={typeof user.local.userSlug !== 'undefined' ? '/user/'+ user.local.userSlug :'/user/unknown'}>
                         <img src={ user.local.image === '' ? '/images/avatar.jpg' : user.local.image}/>
                         <div className="info">
-                            <span className="name">{user.local.name}</span> <span className="views">{ typeof user.meta !== "undefined" ? user.meta.viewWeek : 0 }</span>
+                            <span className="name">{user.local.name}</span> <span className="views">
+                              { typeof user.meta !== "undefined" ? user.meta.viewWeek : 0 }
+                            </span>
                         </div>
                     </a>
                 </div>
@@ -111,9 +133,9 @@ class Home extends Component {
                         <div className="feature-people top-like">
                             <h3 className="topUsers">Top Hài 24h</h3>
                             <ul className="topUsersSort topUsersSortHome">
-                                <li><a className="selected" data-sort="week" href="">Tuần</a> /</li>
-                                <li><a data-sort="month" href="">Tháng</a> /</li>
-                                <li><a data-sort="all" href="">Tất cả</a></li>
+                                <li><a className="selected" data-sort="week" onClick={this.handleTopUser.bind(this,'week')}>Tuần</a> /</li>
+                                <li><a data-sort="month" onClick={this.handleTopUser.bind(this,'month')} >Tháng</a> /</li>
+                                <li><a data-sort="all" onClick={this.handleTopUser.bind(this,'total')} >Tất cả</a></li>
                             </ul>
                             <div className="clear">
                             </div>
@@ -137,7 +159,6 @@ function mapStateToProps(state) {
         topweek: state.topweek
     }
 }
-
 
 function mapDispatchToProps(dispatch) {
     return bindActionCreators({

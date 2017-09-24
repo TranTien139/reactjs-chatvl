@@ -126,7 +126,7 @@ app.route('/api/auth/register').post(function (req, res) {
     let password = req.body.password;
     let name = req.body.firstName;
     let userSlug = req.body.lastName;
-    User.findOne({$and : [{'local.email': email},{'local.userSlug': userSlug}]}, function (err, user) {
+    User.findOne({$or : [{'local.email': email},{'local.userSlug': userSlug}]}, function (err, user) {
         if (err) throw err;
 
         if (user) {
@@ -140,7 +140,7 @@ app.route('/api/auth/register').post(function (req, res) {
                 newUser.local.password = newUser.generateHash(password);
                 newUser.local.name = name;
                 newUser.local.userSlug = userSlug;
-                newUser.local.image = '/images/avatar.jpg';
+                newUser.local.image = '';
                 newUser.local.id_social = '';
                 newUser.save(function (err) {
                     if (err) throw err;
@@ -155,6 +155,18 @@ app.route('/api/auth/register').post(function (req, res) {
 
 app.route('/api/get-top-user-week').get(function (req, res) {
     Article.getTopUser('week',function (err, data) {
+        res.json(data);
+    });
+});
+
+app.route('/api/get-top-user-month').get(function (req, res) {
+    Article.getTopUser('month',function (err, data) {
+        res.json(data);
+    });
+});
+
+app.route('/api/get-top-user-total').get(function (req, res) {
+    Article.getTopUser('total',function (err, data) {
         res.json(data);
     });
 });

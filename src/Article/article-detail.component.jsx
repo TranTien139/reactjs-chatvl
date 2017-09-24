@@ -7,6 +7,7 @@ import common from '../../app/functions/common.js';
 import {Link} from 'react-router';
 import {connect} from 'react-redux';
 import {bindActionCreators} from 'redux';
+import ListReply from '../Article/ListReply.jsx'
 
 class ArticleDetail extends Component {
 
@@ -17,7 +18,11 @@ class ArticleDetail extends Component {
             hot: [],
             likes: false,
             dislikes: false,
-            id_user: ''
+            countlikes: 0,
+            countdislikes: 0,
+            id_user: '',
+            detail:{},
+            comments: [],
         };
     }
 
@@ -31,26 +36,49 @@ class ArticleDetail extends Component {
         this.setState({
             id_user:id_user
         });
+
+        const id = this.props.params.id;
+        fetch('/api/detail/'+id)
+            .then(response => response.json())
+            .then(json => {
+              let liked = json.likes.indexOf(this.state.id_user)!== -1;
+              let disliked = json.dislikes.indexOf(this.state.id_user)!== -1;
+              let countlikes = json.likes.length;
+              let countdislikes = json.dislikes.length;
+              let comments = json.comments;
+              this.setState({
+                  detail:json,
+                  likes:liked,
+                  dislikes:disliked,
+                  countlikes:countlikes,
+                  countdislikes:countdislikes,
+                  comments:comments
+              });
+            }).catch(err=>{
+              console.log(err);
+            });
     }
 
     componentDidMount() {
-        const id = this.props.params.id;
-        this.props.getDetailArticle(id);
-
         fetch("/api/article-hot")
             .then(response => response.json())
             .then(json => {
                 this.setState({hot: json});
+            }).catch(err=>{
+              console.log(err);
             });
     }
 
-    handleComment = () => {
+    handleComment = (value) => {
         let content = this.refs.comment.value;
         let date = new Date();
         let id = this.props.params.id;
         let user = this.props.auth;
 
-        if (content.length > 2 && typeof user != 'undefined') {
+        if(value !== ''){
+          content = $('.reply-'+value).val();
+        }
+        if (content.length > 2 && typeof user !== 'undefined' && user.authenticated === true) {
             fetch('/api/comments', {
                 method: 'POST',
                 headers: {
@@ -65,10 +93,14 @@ class ArticleDetail extends Component {
                     like: [],
                     content: content,
                     date: date,
-                    reply: []
+                    reply: [],
+                    replyID:value,
                 })
             }).then((response)=> response.json()).then((responseJson)=>{
-                    window.location.reload();
+                    let comments = responseJson;
+                    this.setState({
+                      comments:comments
+                    });
             }).catch((err)=>{
                 console.log(err);
             });
@@ -78,7 +110,21 @@ class ArticleDetail extends Component {
     handlelikes = (action)=>{
         let id = this.props.params.id;
         let user = this.props.auth;
-
+        if(action === 'like'){
+          let liked = ! this.state.likes;
+          let countlikes = liked === true ? this.state.countlikes +1: this.state.countlikes - 1;
+          this.setState({
+            likes:liked,
+            countlikes:countlikes
+          })
+        }else {
+          let disliked = !this.state.dislikes;
+          let countdislikes = disliked === true ? this.state.countdislikes +1: this.state.countdislikes - 1;
+          this.setState({
+            dislikes:disliked,
+            countdislikes:countdislikes
+          })
+        }
         if (typeof user != 'undefined' && user.authenticated === true) {
             fetch('/api/likes', {
                 method: 'POST',
@@ -101,16 +147,13 @@ class ArticleDetail extends Component {
     }
 
     render() {
-        const article = this.props.details.details;
 
-        let liked = typeof article.likes !== 'undefined' ? article.likes.indexOf(this.state.id_user): false;
-        let disliked = typeof article.dislikes !== 'undefined' ? article.dislikes.indexOf(this.state.id_user): false;
-
-        const listComment = typeof article.comments !== 'undefined' ?
-            article.comments.map((cmt, i) => {
+        const article = this.state.detail;
+        const listComment = this.state.comments.length > 0 ?
+            this.state.comments.map((cmt, i) => {
                 return (
                     <li className="comment" key={cmt._id}>
-                        <div id="comment-38983">
+                        <div className="comment-38983">
                             <div>
                                 <div className="avatar avatar-32 photo"  style={{backgroundImage: 'url('+ cmt.image+')'}}/>
                                 <cite>{ cmt.name }</cite>
@@ -122,30 +165,50 @@ class ArticleDetail extends Component {
                             <div className="comment-content">
                                 <p>{ cmt.content }</p>
                             </div>
-                            <div className="comment-meta" id="comment-38983">
-                                <div className="comment-reply-link"><span
-                                    className="icon-reply"/> Trả lời
+                            <div className="comment-meta comment-38983">
+                                <div className="comment-reply-link"><span className="icon-reply"/> Trả lời
                                 </div>
                             </div>
+                          </div>
+
                             <div className="reply-form" id="replyform">
-                                <div className="clearfix"
-                                     id="reply-form-input-wrap">
+                              { cmt.reply.map((rep,k)=>{
+                                return(
+                                <div key={rep._id}>
+                                  <div className="avatar avatar-32 photo"  style={{backgroundImage: 'url('+ rep.image+')'}}>
+                                  </div>
+                                  <div>
+                                    <cite>{ rep.name }</cite>
+                                    <div className="comment-link">
+                                      <span className="icon-clock"> </span>
+                                      <time>{ common.NiceTime(rep.date) }</time>
+                                    </div>
+                                  </div>
+                                  <div className="comment-content">
+                                    <p>{ rep.content }</p>
+                                  </div>
+                                  <div className="clearfix"></div>
+                                </div>
+                                );
+                              })
+                              }
+                                <div className="clearfix"></div>
+                                <div className="clearfix"   id="reply-form-input-wrap">
                                     <div className="commenter-avatar-wrap">
                                         <div className="commenter-avatar"
                                              style={{ backgroundImage: 'url("./images/avatar.jpg")' }}/>
                                     </div>
-                                    <textarea id="reply" name="reply" placeholder="Ý kiến của bạn?"  />
+                                    <textarea id="reply" name="reply" className = { 'reply-'+cmt._id.toString() } placeholder="Ý kiến của bạn?"  />
                                     <div id="reply-nofitication"
                                          className="comment-notify-wrap">
                                         <p className="comment-notify"/>
                                     </div>
                                 </div>
                                 <div id="reply-submit-wrap" className="clearfix">
-                                    <div id="reply-submit" >Gửi <span
+                                    <div id="reply-submit" onClick={ this.handleComment.bind(this,cmt._id.toString()) } >Gửi <span
                                         className="icon-right"/></div>
                                 </div>
                             </div>
-                        </div>
                     </li>
                 );
             }) : '';
@@ -175,7 +238,6 @@ class ArticleDetail extends Component {
                 </div>
             );
         });
-
         return (
             <div>
                 <div id="main">
@@ -189,11 +251,11 @@ class ArticleDetail extends Component {
                             <div id="post-control-bar" className="spread-bar-wrap">
                                 <div className="spread-bar">
                                     <div id="facebook-btn" className="facebook-btn">
-                                        <a className={ liked !== -1 ? "stat-item_like liked" : "stat-item_like"} onClick={ this.handlelikes.bind(this,'like') }> <i
-                                            className="fa fa-thumbs-up icon"/> { typeof article.likes !== 'undefined' ? article.likes.length : 0 }
+                                        <a className={ this.state.likes === true ? "stat-item_like liked" : "stat-item_like"} onClick={ this.handlelikes.bind(this,'like') }> <i
+                                            className="fa fa-thumbs-up icon"/> { this.state.countlikes }
                                         </a>
-                                        <a className={ disliked !== -1 ? "stat-item_like liked" : "stat-item_like"} onClick={ this.handlelikes.bind(this,'dislike') } > <i className="fa fa-thumbs-down icon"/>
-                                            { typeof article.dislikes !== 'undefined' ? article.dislikes.length : 0 }
+                                        <a className={ this.state.dislikes === true ? "stat-item_like liked" : "stat-item_like"} onClick={ this.handlelikes.bind(this,'dislike') } > <i className="fa fa-thumbs-down icon"/>
+                                            { this.state.countdislikes }
                                         </a>
                                     </div>
                                 </div>
@@ -258,7 +320,7 @@ class ArticleDetail extends Component {
                                                         </div>
                                                     </div>
                                                     <div id="comment-submit-wrap" className="clearfix">
-                                                        <div id="comment-submit" style={{ marginTop: 0}} onClick={ this.handleComment }>Gửi bình
+                                                        <div id="comment-submit" style={{ marginTop: 0}} onClick={ this.handleComment.bind(this,'') }>Gửi bình
                                                             luận <span
                                                                 className="icon-right"/></div>
                                                     </div>

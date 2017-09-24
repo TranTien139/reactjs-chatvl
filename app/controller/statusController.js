@@ -121,7 +121,7 @@ function AticleComment(data, callback) {
         if (typeof old_comment == 'undefined') {
             old_comment = [];
         }
-
+        if(data.replyID === ''){
         let comment = {
             id: data.id,
             name: data.name,
@@ -132,9 +132,23 @@ function AticleComment(data, callback) {
             reply: [],
         }
         old_comment.push(comment);
+      }else {
+        let rep = {
+            id: data.id,
+            name: data.name,
+            image: data.image,
+            like: 0,
+            content: data.content,
+            date: data.date,
+        }
+      let cmt = old_comment.filter((obj)=>{
+        return obj._id.toString() === data.replyID.toString()
+      });
+      cmt[0].reply.push(rep);
+      }
         data1.comments = old_comment;
         data1.save(function (err) {
-            callback(err, data1);
+            callback(err, data1.comments);
         });
     });
 }
@@ -194,7 +208,20 @@ function getTopUser(time, callback) {
     });
 }
 
+function getTopUserMonth(time, callback) {
+    User.find({}).sort({"meta.viewMonth": -1}).skip(0).limit(10).exec(function (err, data) {
+        callback(err, data);
+    });
+}
+
+function getTopUserTotal(time, callback) {
+    User.find({}).sort({"meta.viewTotal": -1}).skip(0).limit(10).exec(function (err, data) {
+        callback(err, data);
+    });
+}
+
 function postUploadBaiViet(data, callback) {
+  try {
     var article = new Article;
     article.user.id = data.id;
     article.user.name = data.name;
@@ -204,7 +231,6 @@ function postUploadBaiViet(data, callback) {
     if (data.link.indexOf('www.youtube.com') !== -1) {
         let code = data.link.split('?v=');
         article.image = 'http://i.ytimg.com/vi/' + code[1] + '/0.jpg';
-        ;
         article.linkVideo = code[1];
     } else {
         article.image = data.link;
@@ -219,6 +245,11 @@ function postUploadBaiViet(data, callback) {
     article.save(function (err) {
         callback(err, data);
     });
+  } catch (e) {
+        callback(null, null);
+  } finally {
+
+  }
 }
 
 module.exports.DanhSachBaiViet = DanhSachBaiViet;
@@ -230,4 +261,6 @@ module.exports.AticleLikes = AticleLikes;
 module.exports.DanhSachBaiVietCate = DanhSachBaiVietCate;
 module.exports.DanhSachBaiVietUser = DanhSachBaiVietUser;
 module.exports.getTopUser = getTopUser;
+module.exports.getTopUserMonth = getTopUserMonth;
+module.exports.getTopUserTotal = getTopUserTotal;
 module.exports.postUploadBaiViet = postUploadBaiViet;
